@@ -12,19 +12,19 @@
 
 #define MAX_PAYLOAD_LEN 120
 #define MCAST_SINK_UDP_PORT 3001 
-#define Imin (CLOCK_SECOND * 64) 
-#define Imax (CLOCK_SECOND * 132) 
-#define k 2 
+#define Imin (CLOCK_SECOND * 4) 
+#define Imax (CLOCK_SECOND * 64) 
+#define k 2
 
 static struct uip_udp_conn *mcast_conn;
 static char buf[MAX_PAYLOAD_LEN];
 static clock_time_t I; 
 static clock_time_t t; 
 static struct etimer et;
-static int c = 2; //dat c > k de loai bo goi tin dau tien
-static uint32_t seq_id;
-static uint32_t id = -2;
-static uint32_t last_id = -1; 
+static int c;
+static uint32_t seq_id = 1;
+static uint32_t id = -1;
+static uint32_t last_id = 0; 
 
 /*---------------------------------------------------------------------------*/
 PROCESS(rpl_root_process, "TM root");
@@ -38,6 +38,10 @@ multicast_send(void)
   	if(random_choice == 0) {
     		id = uip_htonl(last_id); //gui lai goi tin truoc do
 		c++;
+		if (c >= k) {
+			etimer_set(&et, 0);
+			return;
+		}
   	} else {
     		id = uip_htonl(seq_id); //gui goi tin moi
 		last_id = seq_id;
@@ -63,14 +67,12 @@ renew(void)
 {
   	int random_choice = random_rand() % 2;
 
-  	if(random_choice == 0 && last_id != (uint32_t)-1) {
+  	if(random_choice == 0) {
     		id = uip_htonl(last_id);
-		c++;
 		printf("Packet duplicated\n");
   	} else {
     		id = uip_htonl(seq_id);
     		last_id = seq_id;
-    		seq_id++;
 		c = 0;
 		etimer_set(&et, 0);
   	}
@@ -132,6 +134,7 @@ PROCESS_THREAD(rpl_root_process, ev, data)
   	prepare_mcast();
 
   	I = Imin;
+	c = 0;
   	t = (I / 2) + (random_rand() % (I / 2));
   	etimer_set(&et, t);
 
@@ -154,4 +157,3 @@ PROCESS_THREAD(rpl_root_process, ev, data)
 
   PROCESS_END();
 }
-
