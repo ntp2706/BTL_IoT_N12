@@ -75,7 +75,7 @@ PROCESS_THREAD(mcast_sink_process, ev, data)
   	}
 
   	count = 0;
-  	last_seq_id = -1;
+  	last_seq_id = -10;
   	inconsistent_flag = 0;
   	c = 0; 
 
@@ -96,4 +96,3 @@ PROCESS_THREAD(mcast_sink_process, ev, data)
 
   	PROCESS_END();
 }
-
